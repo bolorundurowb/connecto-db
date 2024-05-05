@@ -1,0 +1,6 @@
+@connecto.server_HostAddress = http://localhost:5043
+
+GET {{connecto.server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
