@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using connecto.server.Models;
+﻿using connecto.server.Models;
 using Dapper;
 using DuckDB.NET.Data;
 
