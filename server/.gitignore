@@ -88,3 +88,6 @@ Temporary Items
 
 # Ignore Visual Studio Code settings
 .vscode/
+
+*.db
+*.db.wal

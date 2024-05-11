@@ -26,4 +26,6 @@ app.UseAuthorization();
 
 app.MapHub<DataStreamHub>("/data-stream");
 
+app.MapControllers();
+
 app.Run();
