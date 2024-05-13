@@ -18,7 +18,6 @@ public class DataService : IDisposable, IAsyncDisposable
 
     public async Task<FlexMap?> GetById(Guid id)
     {
-        await Utils.EnsureTableCreated(_dbConnection, _tableName);
         var entry = await _dbConnection.QuerySingleAsync<(Guid Id, string Data)>(
             $"SELECT id, data FROM {_tableName} WHERE id='{id}'"
         );
@@ -26,17 +25,12 @@ public class DataService : IDisposable, IAsyncDisposable
         return FlexMap.Deserialize(entry.Id, entry.Data);
     }
 
-    public async Task<Guid> Create(FlexMap data)
-    {
-        await Utils.EnsureTableCreated(_dbConnection, _tableName);
-        return await _dbConnection.QuerySingleAsync<Guid>(
+    public async Task<Guid> Create(FlexMap data) =>
+        await _dbConnection.QuerySingleAsync<Guid>(
             $"INSERT INTO {_tableName}(data) VALUES ('{data.Serialize()}') RETURNING id");
-    }
 
     public async Task Update(FlexMap data)
     {
-        await Utils.EnsureTableCreated(_dbConnection, _tableName);
-
         if (!data.HasId())
             throw new InvalidOperationException("The provided data has no id");
 
