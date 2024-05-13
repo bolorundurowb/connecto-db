@@ -12,4 +12,15 @@ public class TableStreamHub : Hub
         var tables = await _tableService.GetAll();
         await Clients.All.SendAsync(Config.TablesRequested, tables);
     }
+
+    public async Task CreateTable(string tableName)
+    {
+        var tableExists = await _tableService.Exists(tableName);
+
+        if (!tableExists)
+        {
+            await _tableService.Create(tableName);
+            await Clients.All.SendAsync(Config.TableCreated, tableName);
+        }
+    }
 }

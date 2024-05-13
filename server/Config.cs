@@ -9,4 +9,6 @@ public static class Config
     public const string EntityCreated = nameof(EntityCreated);
 
     public const string TablesRequested = nameof(TablesRequested);
+
+    public const string TableCreated = nameof(TableCreated);
 }
