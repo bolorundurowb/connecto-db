@@ -21,6 +21,22 @@ public class TableService : IDisposable, IAsyncDisposable
             .ToList();
     }
 
+    public Task Create(string tableName) =>
+        _dbConnection.ExecuteAsync(
+            $"CREATE TABLE {tableName} (id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, data JSON NOT NULL)"
+        );
+
+    public Task<bool> Exists(string tableName) =>
+        _dbConnection.QuerySingleAsync<bool>(
+            $"""
+             SELECT EXISTS (
+                 SELECT 1
+                 FROM sqlite_master
+                 WHERE type = 'table' AND name = '{tableName}'
+             );
+             """
+        );
+
     public void Dispose()
     {
         _dbConnection.Close();
