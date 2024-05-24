@@ -1,4 +1,4 @@
-namespace connecto.server.Models;
+namespace connecto.server.Models.Data;
 
 public class User
 {
@@ -8,7 +8,7 @@ public class User
 
     public string? LastName { get; private set; }
 
-    public string UserName { get; private set; }
+    public string Username { get; private set; }
 
     public string PasswordHash { get; private set; }
 
@@ -16,12 +16,18 @@ public class User
 
     public DateTimeOffset? LastLoggedInAt { get; private set; }
 
-    public User(string userName, string password, string? firstName = null, string? lastName = null)
+#pragma warning disable CS8618
+    private User()
+    {
+    }
+#pragma warning restore CS8618
+
+    public User(string username, string password, string? firstName = null, string? lastName = null)
     {
         Id = Guid.NewGuid();
         CreatedAt = DateTimeOffset.UtcNow;
 
-        UserName = userName;
+        Username = username;
         PasswordHash = HashText(password);
         FirstName = firstName;
         LastName = lastName;
