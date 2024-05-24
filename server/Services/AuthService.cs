@@ -1,4 +1,5 @@
 using connecto.server.Models.Data;
+using connecto.server.Models.Req;
 using Dapper;
 using DuckDB.NET.Data;
 
@@ -14,11 +15,33 @@ public class AuthService : IDisposable, IAsyncDisposable
         _dbConnection.Open();
     }
 
+    public Task<User?> FindById(Guid userId)
+    {
+        return _dbConnection.QuerySingleOrDefaultAsync<User>(
+            $"SELECT * FROM users WHERE id = '{userId}'"
+        );
+    }
+
     public Task<User?> FindByUsername(string username)
     {
         return _dbConnection.QuerySingleOrDefaultAsync<User>(
             $"SELECT * FROM users WHERE username = '{username}'"
         );
+    }
+
+    public async Task<User> Create(RegisterReq details)
+    {
+        var userId = await _dbConnection.QuerySingleAsync<Guid>(
+            $"INSERT INTO users (FirstName, LastName, Username, PasswordHash) VALUES (@FirstName, @LastName, @Username, @PasswordHash)",
+            new
+            {
+                details.Username,
+                details.FirstName,
+                details.LastName,
+                PasswordHash = User.HashText(details.Password),
+            }
+        );
+        return (await FindById(userId))!;
     }
 
     public void Dispose()

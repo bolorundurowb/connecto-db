@@ -18,7 +18,7 @@ public class DataService : IDisposable, IAsyncDisposable
 
     public async Task<FlexMap?> GetById(Guid id)
     {
-        var entry = await _dbConnection.QuerySingleAsync<(Guid Id, string Data)>(
+        var entry = await _dbConnection.QuerySingleOrDefaultAsync<(Guid Id, string Data)>(
             $"SELECT id, data FROM {_tableName} WHERE id='{id}'"
         );
 

@@ -33,7 +33,7 @@ public class User
         LastName = lastName;
     }
 
-    private static string HashText(string text)
+    public static string HashText(string text)
     {
         var salt = BCrypt.Net.BCrypt.GenerateSalt();
         return BCrypt.Net.BCrypt.HashPassword(text, salt);
