@@ -1,4 +1,4 @@
-﻿using connecto.server.Models;
+﻿using connecto.server.Models.Data;
 using connecto.server.Services;
 using Microsoft.AspNetCore.SignalR;
 
