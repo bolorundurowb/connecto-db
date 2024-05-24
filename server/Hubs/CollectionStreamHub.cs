@@ -3,23 +3,23 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace connecto.server.Hubs;
 
-public class TableStreamHub : Hub
+public class CollectionStreamHub : Hub
 {
-    private readonly TableService _tableService = new(Config.DbName);
+    private readonly CollectionService _collectionService = new(Config.DbName);
 
     public async Task ListTables()
     {
-        var tables = await _tableService.GetAll();
+        var tables = await _collectionService.GetAll();
         await Clients.All.SendAsync(Config.TablesRequested, tables);
     }
 
     public async Task CreateTable(string tableName)
     {
-        var tableExists = await _tableService.Exists(tableName);
+        var tableExists = await _collectionService.Exists(tableName);
 
         if (!tableExists)
         {
-            await _tableService.Create(tableName);
+            await _collectionService.Create(tableName);
             await Clients.All.SendAsync(Config.TableCreated, tableName);
         }
     }

@@ -3,11 +3,11 @@ using DuckDB.NET.Data;
 
 namespace connecto.server.Services;
 
-public class TableService : IDisposable, IAsyncDisposable
+public class CollectionService : IDisposable, IAsyncDisposable
 {
     private readonly DuckDBConnection _dbConnection;
 
-    public TableService(string dbName)
+    public CollectionService(string dbName)
     {
         _dbConnection = new DuckDBConnection($"Data Source={dbName}");
         _dbConnection.Open();

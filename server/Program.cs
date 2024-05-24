@@ -25,7 +25,7 @@ app.UseCors();
 app.UseAuthorization();
 
 app.MapHub<DataStreamHub>("/data-stream");
-app.MapHub<TableStreamHub>("/table-stream");
+app.MapHub<CollectionStreamHub>("/collection-stream");
 
 app.MapControllers();
 
