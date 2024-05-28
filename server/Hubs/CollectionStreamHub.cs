@@ -5,7 +5,7 @@ namespace connecto.server.Hubs;
 
 public class CollectionStreamHub : Hub
 {
-    private readonly CollectionService _collectionService = new(Config.DbName);
+    private readonly CollectionService _collectionService = new(Config.CoreDbName);
 
     public async Task ListTables()
     {

@@ -29,10 +29,10 @@ public class DataStreamHub : Hub
     {
         var hasKey = _services.ContainsKey(tableName);
 
-        if (hasKey) 
+        if (hasKey)
             return _services[tableName];
 
-        var service = new DataService(Config.DbName, tableName);
+        var service = new DataService(Config.CoreDbName, tableName);
         _services.Add(tableName, service);
 
         return service;

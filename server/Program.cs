@@ -1,4 +1,5 @@
 using connecto.server.Hubs;
+using connecto.server.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,9 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
+
+// register IoC
+builder.Services.AddScoped<AuthService>();
 
 var app = builder.Build();
 
