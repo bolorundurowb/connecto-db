@@ -91,3 +91,5 @@ Temporary Items
 
 *.db
 *.db.wal
+
+.env

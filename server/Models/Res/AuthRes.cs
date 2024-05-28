@@ -1,6 +1,3 @@
 ﻿namespace connecto.server.Models.Res;
 
-public class AuthRes
-{
-    
-}
+public record AuthRes(UserRes User, string Token, DateTimeOffset ExpiresAt);

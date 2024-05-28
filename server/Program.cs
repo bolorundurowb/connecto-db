@@ -1,5 +1,8 @@
 using connecto.server.Hubs;
 using connecto.server.Services;
+using dotenv.net;
+
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
