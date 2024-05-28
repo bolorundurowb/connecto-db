@@ -15,20 +15,20 @@ public class AuthService : IDisposable, IAsyncDisposable
     {
         _dbConnection = new DuckDBConnection($"Data Source={Config.CoreDbName}");
         _dbConnection.Open();
-        
+
         _dbConnection.Execute(
             """
-             CREATE TABLE IF NOT EXISTS users (
-                 id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, 
-                 first_name VARCHAR(256) NULL,
-                 last_name VARCHAR(256) NULL,
-                 user_name VARCHAR(1024) NOT NULL,
-                 password_hash VARCHAR(2048) NOT NULL,
-                 created_at TIMESTAMPTZ NOT NULL,
-                 last_logged_in_at TIMESTAMPTZ NULL,
-                 UNIQUE(user_name)
-             )
-             """
+            CREATE TABLE IF NOT EXISTS users (
+                id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, 
+                firstname VARCHAR(256) NULL,
+                lastname VARCHAR(256) NULL,
+                username VARCHAR(1024) NOT NULL,
+                passwordhash VARCHAR(2048) NOT NULL,
+                createdat TIMESTAMPTZ NOT NULL,
+                lastloggedinat TIMESTAMPTZ NULL,
+                UNIQUE(username)
+            )
+            """
         );
     }
 
@@ -37,13 +37,13 @@ public class AuthService : IDisposable, IAsyncDisposable
     );
 
     public Task<User?> FindByUsername(string username) => _dbConnection.QuerySingleOrDefaultAsync<User>(
-        $"SELECT * FROM users WHERE user_name = '{username}'"
+        $"SELECT * FROM users WHERE username = '{username}'"
     );
 
     public async Task<AuthRes> Login(User user)
     {
         var loggedInAt = DateTimeOffset.UtcNow;
-        await _dbConnection.ExecuteAsync($"UPDATE users SET last_logged_in_at = '{loggedInAt.ToString()}' WHERE id = '{user.Id}'");
+        await _dbConnection.ExecuteAsync($"UPDATE users SET lastloggedinat = '{loggedInAt:o}' WHERE id = '{user.Id}'");
 
         var userRes = user.Adapt<UserRes>();
         var (token, expiry) = Config.GenerateAuthToken(user);
@@ -54,14 +54,16 @@ public class AuthService : IDisposable, IAsyncDisposable
     public async Task<User> Create(RegisterReq details)
     {
         var userId = await _dbConnection.QuerySingleAsync<Guid>(
-            $"INSERT INTO users (FirstName, LastName, Username, PasswordHash) VALUES (@FirstName, @LastName, @Username, @PasswordHash)",
-            new
-            {
-                details.Username,
-                details.FirstName,
-                details.LastName,
-                PasswordHash = User.HashText(details.Password),
-            }
+            $"""
+             INSERT INTO users (firstname, lastname, username, passwordhash, createdat) 
+             VALUES (
+                     '{details.FirstName}',
+                     '{details.LastName}',
+                     '{details.Username}',
+                     '{User.HashText(details.Password)}',
+                     '{DateTimeOffset.UtcNow:o}'
+              ) RETURNING id
+             """
         );
         return (await FindById(userId))!;
     }
