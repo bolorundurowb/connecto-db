@@ -12,23 +12,23 @@ public static class Config
 {
     public const string CoreDbName = "connecto-core.db";
 
-    public const string UserDbNameTemplate = "connecto-user-{0}.db";
-
-
     private const string Issuer = "connecto db";
 
     private const string Audience = "connecto db";
 
     private static string Secret => EnvReader.GetStringValue("SECRET");
 
-
-    public const string EntityUpdated = nameof(EntityUpdated);
-
+    // Data record events
     public const string EntityCreated = nameof(EntityCreated);
+    public const string EntityUpdated = nameof(EntityUpdated);
+    public const string EntityDeleted = nameof(EntityDeleted);
+    public const string EntityRequested = nameof(EntityRequested);
+    public const string EntitiesRequested = nameof(EntitiesRequested);
 
+    // Collection events
     public const string TablesRequested = nameof(TablesRequested);
-
     public const string TableCreated = nameof(TableCreated);
+    public const string TableDeleted = nameof(TableDeleted);
 
     internal static (string, DateTimeOffset) GenerateAuthToken(User user)
     {

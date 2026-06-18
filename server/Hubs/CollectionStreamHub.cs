@@ -1,14 +1,16 @@
 using ConnectoDb.Server.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ConnectoDb.Server.Hubs;
 
+[Authorize]
 public class CollectionStreamHub(CollectionService collectionService) : Hub
 {
     public async Task ListTables()
     {
         var tables = await collectionService.GetAll();
-        await Clients.All.SendAsync(Config.TablesRequested, tables);
+        await Clients.Caller.SendAsync(Config.TablesRequested, tables);
     }
 
     public async Task CreateTable(string tableName)
@@ -20,5 +22,11 @@ public class CollectionStreamHub(CollectionService collectionService) : Hub
             await collectionService.Create(tableName);
             await Clients.All.SendAsync(Config.TableCreated, tableName);
         }
+    }
+
+    public async Task DeleteTable(string tableName)
+    {
+        await collectionService.Delete(tableName);
+        await Clients.All.SendAsync(Config.TableDeleted, tableName);
     }
 }

@@ -23,12 +23,16 @@ public class CollectionService(AppDbContext dbContext)
             $"CREATE TABLE \"{tableName}\" (id TEXT NOT NULL PRIMARY KEY, data TEXT NOT NULL)"
         );
 
-    public async Task<bool> Exists(string tableName)
+    public Task<bool> Exists(string tableName)
     {
-        var count = await dbContext.Database
+        // intentional: count > 0 check
+        return dbContext.Database
             .SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM sqlite_master WHERE type='table' AND name=@p0", tableName)
-            .FirstAsync();
-        return count > 0;
+            .FirstAsync()
+            .ContinueWith(t => t.Result > 0);
     }
+
+    public Task Delete(string tableName) =>
+        dbContext.Database.ExecuteSqlRawAsync($"DROP TABLE IF EXISTS \"{tableName}\"");
 }
 

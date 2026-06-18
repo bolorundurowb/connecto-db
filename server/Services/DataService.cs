@@ -10,6 +10,15 @@ public class DataService(AppDbContext dbContext)
 {
     private record DataRow(string Id, string Data);
 
+    public async Task<List<FlexMap>> GetAll(string tableName)
+    {
+        var rows = await dbContext.Database
+            .SqlQueryRaw<DataRow>($"SELECT id AS Id, data AS Data FROM \"{tableName}\"")
+            .ToListAsync();
+
+        return rows.Select(r => FlexMap.Deserialize(Guid.Parse(r.Id), r.Data)).ToList();
+    }
+
     public async Task<FlexMap?> GetById(string tableName, Guid id)
     {
         var row = await dbContext.Database
@@ -42,5 +51,11 @@ public class DataService(AppDbContext dbContext)
             data.Serialize(), data.Id()!.Value.ToString()
         );
     }
+
+    public Task Delete(string tableName, Guid id) =>
+        dbContext.Database.ExecuteSqlRawAsync(
+            $"DELETE FROM \"{tableName}\" WHERE id=@p0",
+            id.ToString()
+        );
 }
 
