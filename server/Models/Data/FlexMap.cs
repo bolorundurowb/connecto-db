@@ -23,8 +23,9 @@ public class FlexMap : Dictionary<string, object>
 
     public string Serialize()
     {
-        Remove(IdKey);
-        return JsonSerializer.Serialize(this);
+        var copy = new Dictionary<string, object>(this);
+        copy.Remove(IdKey);
+        return JsonSerializer.Serialize(copy);
     }
 
     public static FlexMap Deserialize(Guid id, string data)

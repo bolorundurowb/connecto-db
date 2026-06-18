@@ -41,15 +41,18 @@ public class DataService(AppDbContext dbContext)
         return id;
     }
 
-    public async Task Update(string tableName, FlexMap data)
+    public async Task<FlexMap> Update(string tableName, FlexMap data)
     {
         if (!data.HasId())
             throw new InvalidOperationException("The provided data has no id");
 
+        var id = data.Id()!.Value;
         await dbContext.Database.ExecuteSqlRawAsync(
             $"UPDATE \"{tableName}\" SET data=@p0 WHERE id=@p1",
-            data.Serialize(), data.Id()!.Value.ToString()
+            data.Serialize(), id.ToString()
         );
+
+        return (await GetById(tableName, id))!;
     }
 
     public Task Delete(string tableName, Guid id) =>

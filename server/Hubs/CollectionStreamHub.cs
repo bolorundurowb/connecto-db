@@ -5,28 +5,72 @@ using Microsoft.AspNetCore.SignalR;
 namespace ConnectoDb.Server.Hubs;
 
 [Authorize]
-public class CollectionStreamHub(CollectionService collectionService) : Hub
+public class CollectionStreamHub(CollectionService collectionService) : BaseHub
 {
     public async Task ListTables()
     {
-        var tables = await collectionService.GetAll();
-        await Clients.Caller.SendAsync(Config.TablesRequested, tables);
+        try
+        {
+            var tables = await collectionService.GetAll();
+            await Clients.Caller.SendAsync(Config.TablesRequested, tables);
+        }
+        catch (Exception ex)
+        {
+            await SendError(ex.Message);
+        }
     }
 
     public async Task CreateTable(string tableName)
     {
-        var tableExists = await collectionService.Exists(tableName);
-
-        if (!tableExists)
+        if (!IsValidTableName(tableName))
         {
-            await collectionService.Create(tableName);
-            await Clients.All.SendAsync(Config.TableCreated, tableName);
+            await SendError($"Invalid table name: '{tableName}'");
+            return;
+        }
+
+        if (CollectionService.IsReserved(tableName))
+        {
+            await SendError($"'{tableName}' is a reserved name.");
+            return;
+        }
+
+        try
+        {
+            var tableExists = await collectionService.Exists(tableName);
+            if (!tableExists)
+            {
+                await collectionService.Create(tableName);
+                await Clients.All.SendAsync(Config.TableCreated, tableName);
+            }
+        }
+        catch (Exception ex)
+        {
+            await SendError(ex.Message);
         }
     }
 
     public async Task DeleteTable(string tableName)
     {
-        await collectionService.Delete(tableName);
-        await Clients.All.SendAsync(Config.TableDeleted, tableName);
+        if (!IsValidTableName(tableName))
+        {
+            await SendError($"Invalid table name: '{tableName}'");
+            return;
+        }
+
+        if (CollectionService.IsReserved(tableName))
+        {
+            await SendError($"'{tableName}' is a reserved name.");
+            return;
+        }
+
+        try
+        {
+            await collectionService.Delete(tableName);
+            await Clients.All.SendAsync(Config.TableDeleted, tableName);
+        }
+        catch (Exception ex)
+        {
+            await SendError(ex.Message);
+        }
     }
 }

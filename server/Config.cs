@@ -30,6 +30,9 @@ public static class Config
     public const string TableCreated = nameof(TableCreated);
     public const string TableDeleted = nameof(TableDeleted);
 
+    // Error event
+    public const string HubError = nameof(HubError);
+
     internal static (string, DateTimeOffset) GenerateAuthToken(User user)
     {
         var claims = new[]
