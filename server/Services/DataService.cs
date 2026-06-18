@@ -1,58 +1,46 @@
-﻿using ConnectoDb.Server.Models.Data;
-using Dapper;
-using DuckDB.NET.Data;
+using ConnectoDb.Server.Data;
+using ConnectoDb.Server.Models.Data;
+using Microsoft.EntityFrameworkCore;
+
+#pragma warning disable EF1002 // Table names are quoted identifiers, not parameterizable
 
 namespace ConnectoDb.Server.Services;
 
-public class DataService : IDisposable, IAsyncDisposable
+public class DataService(AppDbContext dbContext)
 {
-    private readonly DuckDBConnection _dbConnection;
-    private readonly string _tableName;
+    private record DataRow(string Id, string Data);
 
-    public DataService(string dbName, string tableName)
+    public async Task<FlexMap?> GetById(string tableName, Guid id)
     {
-        _tableName = tableName;
-        _dbConnection = new DuckDBConnection($"Data Source={dbName}");
-        _dbConnection.Open();
-    }
+        var row = await dbContext.Database
+            .SqlQueryRaw<DataRow>($"SELECT id AS Id, data AS Data FROM \"{tableName}\" WHERE id=@p0", id.ToString())
+            .FirstOrDefaultAsync();
 
-    public async Task<FlexMap?> GetById(Guid id)
-    {
-        var entry = await _dbConnection.QuerySingleOrDefaultAsync<(Guid Id, string Data)>(
-            $"SELECT id, data FROM \"{_tableName}\" WHERE id = $Id",
-            new { Id = id }
-        );
-
-        if (entry == default)
+        if (row is null)
             return null;
 
-        return FlexMap.Deserialize(entry.Id, entry.Data);
+        return FlexMap.Deserialize(Guid.Parse(row.Id), row.Data);
     }
 
-    public async Task<Guid> Create(FlexMap data) =>
-        await _dbConnection.QuerySingleAsync<Guid>(
-            $"INSERT INTO \"{_tableName}\"(data) VALUES ($Data) RETURNING id",
-            new { Data = data.Serialize() });
+    public async Task<Guid> Create(string tableName, FlexMap data)
+    {
+        var id = Guid.NewGuid();
+        await dbContext.Database.ExecuteSqlRawAsync(
+            $"INSERT INTO \"{tableName}\"(id, data) VALUES (@p0, @p1)",
+            id.ToString(), data.Serialize()
+        );
+        return id;
+    }
 
-    public async Task Update(FlexMap data)
+    public async Task Update(string tableName, FlexMap data)
     {
         if (!data.HasId())
             throw new InvalidOperationException("The provided data has no id");
 
-        await _dbConnection.ExecuteAsync(
-            $"UPDATE \"{_tableName}\" SET data = $Data WHERE id = $Id",
-            new { Data = data.Serialize(), Id = data.Id() });
-    }
-
-    public void Dispose()
-    {
-        _dbConnection.Close();
-        _dbConnection.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _dbConnection.CloseAsync();
-        await _dbConnection.DisposeAsync();
+        await dbContext.Database.ExecuteSqlRawAsync(
+            $"UPDATE \"{tableName}\" SET data=@p0 WHERE id=@p1",
+            data.Serialize(), data.Id()!.Value.ToString()
+        );
     }
 }
+

@@ -1,40 +1,23 @@
-﻿using ConnectoDb.Server.Models.Data;
+using ConnectoDb.Server.Models.Data;
 using ConnectoDb.Server.Services;
 using Microsoft.AspNetCore.SignalR;
 
 namespace ConnectoDb.Server.Hubs;
 
-public class DataStreamHub : Hub
+public class DataStreamHub(DataService dataService) : Hub
 {
-    private readonly Dictionary<string, DataService> _services = new();
-
     public async Task UpsertDataRecord(string tableName, FlexMap req)
     {
-        var service = GetServiceForTable(tableName);
-
         if (req.HasId())
         {
-            await service.Update(req);
+            await dataService.Update(tableName, req);
             await Clients.All.SendAsync(Config.EntityUpdated, tableName, req);
         }
         else
         {
-            var id = await service.Create(req);
-            var entity = await service.GetById(id);
+            var id = await dataService.Create(tableName, req);
+            var entity = await dataService.GetById(tableName, id);
             await Clients.All.SendAsync(Config.EntityCreated, tableName, entity);
         }
-    }
-
-    private DataService GetServiceForTable(string tableName)
-    {
-        var hasKey = _services.ContainsKey(tableName);
-
-        if (hasKey)
-            return _services[tableName];
-
-        var service = new DataService(Config.CoreDbName, tableName);
-        _services.Add(tableName, service);
-
-        return service;
     }
 }

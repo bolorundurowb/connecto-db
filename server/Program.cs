@@ -1,9 +1,12 @@
 using System.Text;
+using ConnectoDb.Server;
+using ConnectoDb.Server.Data;
 using ConnectoDb.Server.Hubs;
 using ConnectoDb.Server.Services;
 using dotenv.net;
 using dotenv.net.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 DotEnv.Load();
@@ -21,6 +24,9 @@ builder.Services.AddCors(options =>
             .AllowCredentials();
     });
 });
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite($"Data Source={Config.CoreDbName}"));
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -59,8 +65,17 @@ builder.Services.AddControllers();
 
 // register IoC
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<CollectionService>();
+builder.Services.AddScoped<DataService>();
 
 var app = builder.Build();
+
+// Ensure database schema is created
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
 
 app.UseRouting();
 app.UseCors();

@@ -1,52 +1,34 @@
-﻿using Dapper;
-using DuckDB.NET.Data;
+using ConnectoDb.Server.Data;
+using Microsoft.EntityFrameworkCore;
+
+#pragma warning disable EF1002 // Table names are quoted identifiers, not parameterizable
 
 namespace ConnectoDb.Server.Services;
 
-public class CollectionService : IDisposable, IAsyncDisposable
+public class CollectionService(AppDbContext dbContext)
 {
-    private readonly DuckDBConnection _dbConnection;
-
-    public CollectionService(string dbName)
-    {
-        _dbConnection = new DuckDBConnection($"Data Source={dbName}");
-        _dbConnection.Open();
-    }
+    private static readonly string[] SystemTables = ["users", "__EFMigrationsHistory", "sqlite_sequence"];
 
     public async Task<List<string>> GetAll()
     {
-        var tables = await _dbConnection.QueryAsync<string>("SHOW TABLES");
-        return tables
-            .Order()
-            .ToList();
+        var excluded = string.Join(", ", SystemTables.Select(t => $"'{t}'"));
+        var tables = await dbContext.Database
+            .SqlQueryRaw<string>($"SELECT name AS Value FROM sqlite_master WHERE type='table' AND name NOT IN ({excluded})")
+            .ToListAsync();
+        return [..tables.Order()];
     }
 
     public Task Create(string tableName) =>
-        _dbConnection.ExecuteAsync(
-            $"CREATE TABLE \"{tableName}\" (id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, data JSON NOT NULL)"
+        dbContext.Database.ExecuteSqlRawAsync(
+            $"CREATE TABLE \"{tableName}\" (id TEXT NOT NULL PRIMARY KEY, data TEXT NOT NULL)"
         );
 
-    public Task<bool> Exists(string tableName) =>
-        _dbConnection.QuerySingleAsync<bool>(
-            """
-            SELECT EXISTS (
-                SELECT 1
-                FROM information_schema.tables
-                WHERE table_name = $TableName
-            );
-            """,
-            new { TableName = tableName }
-        );
-
-    public void Dispose()
+    public async Task<bool> Exists(string tableName)
     {
-        _dbConnection.Close();
-        _dbConnection.Dispose();
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _dbConnection.CloseAsync();
-        await _dbConnection.DisposeAsync();
+        var count = await dbContext.Database
+            .SqlQueryRaw<int>("SELECT COUNT(*) AS Value FROM sqlite_master WHERE type='table' AND name=@p0", tableName)
+            .FirstAsync();
+        return count > 0;
     }
 }
+
