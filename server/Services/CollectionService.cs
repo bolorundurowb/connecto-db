@@ -23,18 +23,19 @@ public class CollectionService : IDisposable, IAsyncDisposable
 
     public Task Create(string tableName) =>
         _dbConnection.ExecuteAsync(
-            $"CREATE TABLE {tableName} (id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, data JSON NOT NULL)"
+            $"CREATE TABLE \"{tableName}\" (id UUID NOT NULL DEFAULT uuid() PRIMARY KEY, data JSON NOT NULL)"
         );
 
     public Task<bool> Exists(string tableName) =>
         _dbConnection.QuerySingleAsync<bool>(
-            $"""
-             SELECT EXISTS (
-                 SELECT 1
-                 FROM sqlite_master
-                 WHERE type = 'table' AND name = '{tableName}'
-             );
-             """
+            """
+            SELECT EXISTS (
+                SELECT 1
+                FROM information_schema.tables
+                WHERE table_name = $TableName
+            );
+            """,
+            new { TableName = tableName }
         );
 
     public void Dispose()

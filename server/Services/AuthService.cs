@@ -33,17 +33,22 @@ public class AuthService : IDisposable, IAsyncDisposable
     }
 
     public Task<User?> FindById(Guid userId) => _dbConnection.QuerySingleOrDefaultAsync<User>(
-        $"SELECT * FROM users WHERE id = '{userId}'"
+        "SELECT * FROM users WHERE id = $Id",
+        new { Id = userId }
     );
 
     public Task<User?> FindByUsername(string username) => _dbConnection.QuerySingleOrDefaultAsync<User>(
-        $"SELECT * FROM users WHERE username = '{username}'"
+        "SELECT * FROM users WHERE username = $Username",
+        new { Username = username }
     );
 
     public async Task<AuthRes> Login(User user)
     {
         var loggedInAt = DateTimeOffset.UtcNow;
-        await _dbConnection.ExecuteAsync($"UPDATE users SET lastloggedinat = '{loggedInAt:o}' WHERE id = '{user.Id}'");
+        await _dbConnection.ExecuteAsync(
+            "UPDATE users SET lastloggedinat = $LoggedInAt WHERE id = $Id",
+            new { LoggedInAt = loggedInAt, Id = user.Id }
+        );
 
         var userRes = user.Adapt<UserRes>();
         var (token, expiry) = Config.GenerateAuthToken(user);
@@ -54,16 +59,18 @@ public class AuthService : IDisposable, IAsyncDisposable
     public async Task<User> Create(RegisterReq details)
     {
         var userId = await _dbConnection.QuerySingleAsync<Guid>(
-            $"""
-             INSERT INTO users (firstname, lastname, username, passwordhash, createdat) 
-             VALUES (
-                     '{details.FirstName}',
-                     '{details.LastName}',
-                     '{details.Username}',
-                     '{User.HashText(details.Password)}',
-                     '{DateTimeOffset.UtcNow:o}'
-              ) RETURNING id
-             """
+            """
+            INSERT INTO users (firstname, lastname, username, passwordhash, createdat) 
+            VALUES ($FirstName, $LastName, $Username, $PasswordHash, $CreatedAt) RETURNING id
+            """,
+            new
+            {
+                details.FirstName,
+                details.LastName,
+                details.Username,
+                PasswordHash = User.HashText(details.Password),
+                CreatedAt = DateTimeOffset.UtcNow
+            }
         );
         return (await FindById(userId))!;
     }
