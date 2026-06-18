@@ -1,4 +1,4 @@
-﻿namespace connecto.server.Models.Res;
+﻿namespace ConnectoDb.Server.Models.Res;
 
 public class UserRes
 {

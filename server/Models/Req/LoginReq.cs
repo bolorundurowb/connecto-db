@@ -1,4 +1,4 @@
-namespace connecto.server.Models.Req;
+namespace ConnectoDb.Server.Models.Req;
 
 public class LoginReq
 {

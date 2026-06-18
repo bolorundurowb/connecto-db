@@ -1,5 +1,5 @@
-using connecto.server.Hubs;
-using connecto.server.Services;
+using ConnectoDb.Server.Hubs;
+using ConnectoDb.Server.Services;
 using dotenv.net;
 
 DotEnv.Load();

@@ -1,9 +1,9 @@
-using connecto.server.Models.Req;
-using connecto.server.Services;
+using ConnectoDb.Server.Models.Req;
+using ConnectoDb.Server.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace connecto.server.Controllers;
+namespace ConnectoDb.Server.Controllers;
 
 [Authorize]
 [Route("api/auth")]

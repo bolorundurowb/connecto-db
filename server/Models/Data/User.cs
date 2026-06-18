@@ -1,4 +1,4 @@
-namespace connecto.server.Models.Data;
+namespace ConnectoDb.Server.Models.Data;
 
 public class User
 {

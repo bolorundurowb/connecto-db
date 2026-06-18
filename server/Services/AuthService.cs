@@ -1,11 +1,11 @@
-using connecto.server.Models.Data;
-using connecto.server.Models.Req;
-using connecto.server.Models.Res;
+using ConnectoDb.Server.Models.Data;
+using ConnectoDb.Server.Models.Req;
+using ConnectoDb.Server.Models.Res;
 using Dapper;
 using DuckDB.NET.Data;
 using Mapster;
 
-namespace connecto.server.Services;
+namespace ConnectoDb.Server.Services;
 
 public class AuthService : IDisposable, IAsyncDisposable
 {

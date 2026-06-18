@@ -1,8 +1,8 @@
-﻿using connecto.server.Models.Data;
+﻿using ConnectoDb.Server.Models.Data;
 using Dapper;
 using DuckDB.NET.Data;
 
-namespace connecto.server.Services;
+namespace ConnectoDb.Server.Services;
 
 public class DataService : IDisposable, IAsyncDisposable
 {

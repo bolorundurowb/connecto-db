@@ -1,12 +1,12 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using connecto.server.Models.Data;
+using ConnectoDb.Server.Models.Data;
 using dotenv.net.Utilities;
 using Microsoft.IdentityModel.Tokens;
 using JwtRegisteredClaimNames = Microsoft.IdentityModel.JsonWebTokens.JwtRegisteredClaimNames;
 
-namespace connecto.server;
+namespace ConnectoDb.Server;
 
 public static class Config
 {

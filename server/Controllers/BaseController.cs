@@ -1,8 +1,8 @@
 ﻿using System.Net;
-using connecto.server.Models.Res;
+using ConnectoDb.Server.Models.Res;
 using Microsoft.AspNetCore.Mvc;
 
-namespace connecto.server.Controllers;
+namespace ConnectoDb.Server.Controllers;
 
 [ApiController]
 public abstract class BaseController : ControllerBase

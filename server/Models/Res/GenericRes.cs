@@ -1,3 +1,3 @@
-﻿namespace connecto.server.Models.Res;
+﻿namespace ConnectoDb.Server.Models.Res;
 
 public record GenericRes(string Message);

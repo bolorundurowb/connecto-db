@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace connecto.server.Models.Data;
+namespace ConnectoDb.Server.Models.Data;
 
 public class FlexMap : Dictionary<string, object>
 {

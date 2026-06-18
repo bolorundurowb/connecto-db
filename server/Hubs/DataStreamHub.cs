@@ -1,8 +1,8 @@
-﻿using connecto.server.Models.Data;
-using connecto.server.Services;
+﻿using ConnectoDb.Server.Models.Data;
+using ConnectoDb.Server.Services;
 using Microsoft.AspNetCore.SignalR;
 
-namespace connecto.server.Hubs;
+namespace ConnectoDb.Server.Hubs;
 
 public class DataStreamHub : Hub
 {

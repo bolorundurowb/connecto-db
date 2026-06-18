@@ -1,7 +1,7 @@
-﻿using connecto.server.Services;
+﻿using ConnectoDb.Server.Services;
 using Microsoft.AspNetCore.SignalR;
 
-namespace connecto.server.Hubs;
+namespace ConnectoDb.Server.Hubs;
 
 public class CollectionStreamHub : Hub
 {
