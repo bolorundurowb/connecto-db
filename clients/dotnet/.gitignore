@@ -1,4 +1,4 @@
-[Dd]ebug/
+﻿[Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
 [Rr]eleases/
@@ -23,5 +23,3 @@ project.fragment.lock.json
 .vs/
 .idea/
 .vscode/
-
-.env
