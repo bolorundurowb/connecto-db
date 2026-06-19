@@ -2,11 +2,6 @@
 
 A Firebase-inspired realtime database built with **ASP.NET Core**, **SignalR**, **EF Core**, and **SQLite**. Clients subscribe to named collections and receive live push notifications when records are created, updated, or deleted — without polling.
 
-
----
-
-## Tech Stack
-
 | Layer | Technology |
 |---|---|
 | Runtime | .NET 10 |
@@ -16,36 +11,252 @@ A Firebase-inspired realtime database built with **ASP.NET Core**, **SignalR**, 
 
 ---
 
-## Setup
+## Server
 
 ### Prerequisites
 
-- .NET 10 SDK
+- .NET 10 SDK (for building from source)
 
 ### Environment Variables
 
-Create a `.env` file in the `server/` directory (see `.env.example`):
+Create a `.env` file next to the server executable (see `server/.env.example`):
 
 ```
 SECRET=your-jwt-signing-secret-min-32-chars
 ```
 
-### Run
+### Run from Source
 
 ```bash
 cd server
 dotnet run
 ```
 
-The server starts on `http://localhost:5000` by default. The SQLite database file (`connecto-core.db`) is created automatically on first run.
+The server starts on `http://localhost:5043`. The SQLite database (`connecto-core.db`) is created automatically.
+
+### Build a Single Executable
+
+```bash
+cd server
+dotnet publish -c Release -r linux-x64 --self-contained
+# or: win-x64, osx-arm64, etc.
+```
+
+The output is a single file at `bin/Release/net10.0/<rid>/publish/connecto-server`. Copy it anywhere and run:
+
+```bash
+SECRET=my-secret ./connecto-server
+```
+
+Available runtime identifiers: `linux-x64`, `linux-arm64`, `win-x64`, `osx-x64`, `osx-arm64`.
+
+### Run with Docker
+
+```bash
+# Build
+docker build -t connecto-server ./server
+
+# Run
+docker run -p 5043:5043 -e SECRET=my-secret -v connecto-data:/app/data connecto-server
+```
+
+The `-v` flag persists the SQLite database across container restarts.
 
 ---
 
-## Authentication
+## Client Libraries
 
-All hub connections and endpoints require a valid JWT. Obtain a token via the REST API, then pass it as the `access_token` query string when connecting to a hub.
+Official clients are available for five languages. Each handles authentication, hub connection, and realtime event subscriptions.
 
-### REST Endpoints
+### TypeScript / JavaScript
+
+```bash
+npm install @connecto/client
+```
+
+```typescript
+import { ConnectoClient } from "@connecto/client";
+
+const client = new ConnectoClient("http://localhost:5043");
+
+// Authenticate
+await client.login({ username: "alice", "password": "s3cret" });
+
+// Connect to SignalR hubs
+await client.connect();
+
+// Create a collection
+await client.createTable("posts");
+
+// Subscribe to realtime events
+client.onEntityCreated((table, record) => {
+  console.log(`New record in ${table}:`, record);
+});
+
+// Insert a record
+const post = await client.upsert("posts", { title: "Hello", body: "World" });
+
+// Fetch all records
+const all = await client.getAllRecords("posts");
+
+// Disconnect when done
+await client.disconnect();
+```
+
+### .NET
+
+```bash
+dotnet add package Connecto.Client
+```
+
+```csharp
+using Connecto.Client;
+
+await using var client = new ConnectoClient("http://localhost:5043");
+
+// Authenticate
+await client.Login(new LoginReq("alice", "s3cret"));
+
+// Connect
+await client.Connect();
+
+// Create a collection and insert a record
+await client.CreateTable("posts");
+await client.Upsert("posts", new FlexMap { ["title"] = "Hello", ["body"] = "World" });
+
+// Fetch all records
+var records = await client.GetAllRecords("posts");
+
+// Realtime listeners
+client.OnEntityCreated((table, record) => Console.WriteLine($"New: {table}"));
+```
+
+### Rust
+
+```toml
+# Cargo.toml
+[dependencies]
+connecto-client = "0.1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+```
+
+```rust
+use connecto_client::ConnectoClient;
+use std::collections::HashMap;
+use serde_json::json;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut client = ConnectoClient::new("http://localhost:5043");
+
+    client.login("alice", "s3cret").await?;
+    client.connect().await?;
+
+    client.create_table("posts").await?;
+
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Hello"));
+    data.insert("body".to_string(), json!("World"));
+    let post = client.upsert("posts", data).await?;
+
+    let records = client.get_all_records("posts").await?;
+    println!("{:?}", records);
+
+    Ok(())
+}
+```
+
+### Go
+
+```bash
+go get github.com/connecto/go-client/connecto
+```
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/connecto/go-client/connecto"
+)
+
+func main() {
+    client := connecto.NewClient("http://localhost:5043")
+
+    _, err := client.Login("alice", "s3cret")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    err = client.Connect()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Disconnect()
+
+    client.CreateTable("posts")
+
+    data := connecto.FlexMap{"title": "Hello", "body": "World"}
+    client.Upsert("posts", data)
+
+    records, _ := client.GetAllRecords("posts")
+    fmt.Println(records)
+
+    client.OnEntityCreated(func(table string, record connecto.FlexMap) {
+        fmt.Printf("New record in %s: %v\n", table, record)
+    })
+
+    select {} // keep alive for realtime events
+}
+```
+
+### Java
+
+```xml
+<!-- pom.xml -->
+<dependency>
+    <groupId>com.connecto</groupId>
+    <artifactId>connecto-client</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+```java
+import com.connecto.client.ConnectoClient;
+import java.util.Map;
+
+public class App {
+    public static void main(String[] args) throws Exception {
+        var client = new ConnectoClient("http://localhost:5043");
+
+        client.login("alice", "s3cret");
+        client.connect().get();
+
+        client.createTable("posts").get();
+
+        var data = Map.of("title", "Hello", "body", "World");
+        client.upsert("posts", data).get();
+
+        var records = client.getAllRecords("posts").get();
+        System.out.println(records);
+
+        client.onEntityCreated((table, record) ->
+            System.out.printf("New record in %s: %s%n", table, record));
+
+        Thread.currentThread().join(); // keep alive for realtime events
+    }
+}
+```
+
+---
+
+## API Reference
+
+### Authentication (REST)
+
+All hub connections require a JWT. Tokens expire after 14 days.
 
 #### `POST /api/auth/register`
 
@@ -63,80 +274,79 @@ Both return:
 
 ```json
 {
-  "user":      { "id": "...", "username": "alice", "firstName": "Alice", "lastName": "Smith", "createdAt": "..." },
-  "token":     "<jwt>",
+  "user": { "id": "...", "username": "alice", "firstName": "Alice", "lastName": "Smith", "createdAt": "..." },
+  "token": "<jwt>",
   "expiresAt": "..."
 }
 ```
 
-Tokens expire after **14 days**.
+### SignalR Hubs
 
----
+Pass the JWT as `?access_token=<token>` when connecting.
 
-## SignalR Hubs
+#### `CollectionStreamHub` — `/collection-stream`
 
-Connect with the JWT token in the query string:
-
-```js
-const connection = new signalR.HubConnectionBuilder()
-  .withUrl("/collection-stream?access_token=<token>")
-  .build();
-```
-
----
-
-### `CollectionStreamHub` — `/collection-stream`
-
-Manages collections (tables). Schema changes are broadcast to **all** connected clients.
-
-| Client → Server | Arguments | Description |
+| Client -> Server | Arguments | Description |
 |---|---|---|
-| `ListTables` | — | Request the current list of collections |
-| `CreateTable` | `tableName: string` | Create a new collection |
-| `DeleteTable` | `tableName: string` | Drop an existing collection |
+| `ListTables` | — | List all collections |
+| `CreateTable` | `tableName: string` | Create a collection |
+| `DeleteTable` | `tableName: string` | Drop a collection |
 
-| Server → Client | Payload | Trigger |
+| Server -> Client | Payload | Trigger |
 |---|---|---|
-| `TablesRequested` | `string[]` | Response to `ListTables` (caller only) |
-| `TableCreated` | `tableName: string` | A new collection was created (all clients) |
-| `TableDeleted` | `tableName: string` | A collection was dropped (all clients) |
-| `HubError` | `message: string` | An operation failed (caller only) |
+| `TablesRequested` | `string[]` | Response to `ListTables` (caller) |
+| `TableCreated` | `tableName` | Collection created (all clients) |
+| `TableDeleted` | `tableName` | Collection dropped (all clients) |
+| `HubError` | `message` | Operation failed (caller) |
 
-**Table name rules:** must match `^[a-zA-Z_][a-zA-Z0-9_]*$`. Reserved names (`users`, `sqlite_sequence`, etc.) are rejected.
+**Table names** must match `^[a-zA-Z_][a-zA-Z0-9_]*$` (max 128 chars). Reserved: `users`, `sqlite_sequence`, etc.
 
----
+#### `DataStreamHub` — `/data-stream`
 
-### `DataStreamHub` — `/data-stream`
-
-Manages records within collections. Uses a **subscribe/unsubscribe** model — clients only receive mutation events for tables they have explicitly subscribed to.
-
-| Client → Server | Arguments | Description |
+| Client -> Server | Arguments | Description |
 |---|---|---|
-| `SubscribeToTable` | `tableName: string` | Start receiving realtime events for a collection |
-| `UnsubscribeFromTable` | `tableName: string` | Stop receiving events for a collection |
-| `GetAllRecords` | `tableName: string` | Fetch all records in a collection |
-| `GetRecord` | `tableName: string`, `id: Guid` | Fetch a single record by ID |
-| `UpsertDataRecord` | `tableName: string`, `data: object` | Create or update a record. Include `"id"` in `data` to update; omit to create |
-| `DeleteRecord` | `tableName: string`, `id: Guid` | Delete a record by ID |
+| `SubscribeToTable` | `tableName` | Start receiving events |
+| `UnsubscribeFromTable` | `tableName` | Stop receiving events |
+| `GetAllRecords` | `tableName` | Fetch all records |
+| `GetRecord` | `tableName`, `id` | Fetch one record |
+| `UpsertDataRecord` | `tableName`, `data` | Create (no `id`) or update (with `id`) |
+| `DeleteRecord` | `tableName`, `id` | Delete a record |
 
-| Server → Client | Payload | Trigger |
+| Server -> Client | Payload | Trigger |
 |---|---|---|
-| `EntitiesRequested` | `tableName`, `records[]` | Response to `GetAllRecords` (caller only) |
-| `EntityRequested` | `tableName`, `record` | Response to `GetRecord` (caller only) |
-| `EntityCreated` | `tableName`, `record` | A record was created (table subscribers only) |
-| `EntityUpdated` | `tableName`, `record` | A record was updated (table subscribers only) |
-| `EntityDeleted` | `tableName`, `id: Guid` | A record was deleted (table subscribers only) |
-| `HubError` | `message: string` | An operation failed (caller only) |
+| `EntitiesRequested` | `tableName`, `records[]` | Response to `GetAllRecords` (caller) |
+| `EntityRequested` | `tableName`, `record` | Response to `GetRecord` (caller) |
+| `EntityCreated` | `tableName`, `record` | Record created (subscribers) |
+| `EntityUpdated` | `tableName`, `record` | Record updated (subscribers) |
+| `EntityDeleted` | `tableName`, `id` | Record deleted (subscribers) |
+| `HubError` | `message` | Operation failed (caller) |
 
-#### Record format
-
-Records are arbitrary JSON objects. When a record is returned from the server, an `"id"` field (UUID string) is always present:
+Records are arbitrary JSON objects. The server always includes an `"id"` field (UUID string):
 
 ```json
 { "id": "3fa85f64-...", "name": "Alice", "score": 42 }
 ```
 
-To **update**, include the `"id"` in the payload. To **create**, omit it.
+---
+
+## CI/CD
+
+Each client library has a GitHub Actions workflow that builds on every push and publishes on tag push:
+
+| Client | Tag Pattern | Publishes To | Secret |
+|---|---|---|---|
+| TypeScript | `typescript/v*` | npm | `NPM_TOKEN` |
+| .NET | `dotnet/v*` | NuGet | `NUGET_TOKEN` |
+| Rust | `rust/v*` | crates.io | `CRATES_IO_TOKEN` |
+| Go | `go/v*` | GitHub Release | — |
+| Java | `java/v*` | GitHub Packages | `GITHUB_TOKEN` |
+| Server Docker | `server/v*` | ghcr.io | `GITHUB_TOKEN` |
+
+Example release:
+
+```bash
+git tag typescript/v0.1.0 && git push origin typescript/v0.1.0
+```
 
 ---
 
@@ -159,7 +369,11 @@ To **update**, include the `"id"` in the payload. To **create**, omit it.
 └─────────────────────────────────────────────┘
 ```
 
-- **Auth** is handled by a standard REST controller returning JWTs.
-- **Collections** (tables) and **records** are managed entirely through SignalR hubs.
-- The SQLite database is a single file (`connecto-core.db`). The `users` table is managed by EF Core; all other tables are created dynamically by clients at runtime.
-- Real-time fanout uses **SignalR Groups** — one group per collection name. Clients must explicitly subscribe to receive mutation events.
+- **Auth** is a standard REST controller returning JWTs.
+- **Collections** and **records** are managed entirely through SignalR hubs.
+- The SQLite database is a single file. The `users` table is managed by EF Core; all other tables are created dynamically by clients at runtime.
+- Real-time fanout uses **SignalR Groups** — one group per collection name.
+
+## License
+
+MIT

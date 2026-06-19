@@ -1,0 +1,41 @@
+name: .NET Client
+
+on:
+  push:
+    paths:
+      - "clients/dotnet/**"
+    tags:
+      - "dotnet/v*"
+  pull_request:
+    paths:
+      - "clients/dotnet/**"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - run: dotnet build -c Release
+        working-directory: clients/dotnet/Connecto.Client
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/dotnet/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+          source-url: "https://api.nuget.org/v3/index.json"
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_TOKEN }}
+      - run: dotnet pack -c Release -o ./nupkg
+        working-directory: clients/dotnet/Connecto.Client
+      - run: dotnet nuget push ./nupkg/*.nupkg --api-key ${{ secrets.NUGET_TOKEN }} --source https://api.nuget.org/v3/index.json
+        working-directory: clients/dotnet/Connecto.Client

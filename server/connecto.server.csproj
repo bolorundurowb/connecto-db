@@ -6,6 +6,11 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>ConnectoDb.Server</RootNamespace>
         <LangVersion>14</LangVersion>
+        <AssemblyName>connecto-server</AssemblyName>
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+        <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     </PropertyGroup>
 
     <ItemGroup>

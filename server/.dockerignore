@@ -1,0 +1,15 @@
+**/.git
+**/.gitignore
+**/.vs
+**/.vscode
+**/.idea
+**/bin
+**/obj
+**/node_modules
+**/target
+**/*.db
+**/*.db.wal
+**/.env
+**/README.md
+**/.dockerignore
+**/Dockerfile
