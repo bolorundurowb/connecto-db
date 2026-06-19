@@ -16,7 +16,7 @@ public class CollectionStreamHub(CollectionService collectionService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError("Failed to list tables.", ex);
         }
     }
 
@@ -37,15 +37,18 @@ public class CollectionStreamHub(CollectionService collectionService) : BaseHub
         try
         {
             var tableExists = await collectionService.Exists(tableName);
-            if (!tableExists)
+            if (tableExists)
             {
-                await collectionService.Create(tableName);
-                await Clients.All.SendAsync(Config.TableCreated, tableName);
+                await SendError($"Table '{tableName}' already exists.");
+                return;
             }
+
+            await collectionService.Create(tableName);
+            await Clients.All.SendAsync(Config.TableCreated, tableName);
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError($"Failed to create table '{tableName}'.", ex);
         }
     }
 
@@ -70,7 +73,7 @@ public class CollectionStreamHub(CollectionService collectionService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError($"Failed to delete table '{tableName}'.", ex);
         }
     }
 }

@@ -45,7 +45,7 @@ public class DataStreamHub(DataService dataService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError("Failed to retrieve records.", ex);
         }
     }
 
@@ -64,7 +64,7 @@ public class DataStreamHub(DataService dataService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError("Failed to retrieve record.", ex);
         }
     }
 
@@ -92,7 +92,7 @@ public class DataStreamHub(DataService dataService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError("Failed to save record.", ex);
         }
     }
 
@@ -111,7 +111,7 @@ public class DataStreamHub(DataService dataService) : BaseHub
         }
         catch (Exception ex)
         {
-            await SendError(ex.Message);
+            await SendError("Failed to delete record.", ex);
         }
     }
 }

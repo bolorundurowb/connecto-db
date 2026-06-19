@@ -18,7 +18,7 @@ public class FlexMap : Dictionary<string, object>
             return null;
 
         var rawId = this[IdKey].ToString();
-        return Guid.Parse(rawId!);
+        return Guid.TryParse(rawId, out var guid) ? guid : null;
     }
 
     public string Serialize()
@@ -30,7 +30,8 @@ public class FlexMap : Dictionary<string, object>
 
     public static FlexMap Deserialize(Guid id, string data)
     {
-      var deserialized = JsonSerializer.Deserialize<Dictionary<string, object>>(data)!;
+        var deserialized = JsonSerializer.Deserialize<Dictionary<string, object>>(data)
+            ?? new Dictionary<string, object>();
         deserialized.Add(IdKey, id.ToString());
 
         return new FlexMap(deserialized);

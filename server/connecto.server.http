@@ -1,6 +1,23 @@
 @connecto.server_HostAddress = http://localhost:5043
 
-GET {{connecto.server_HostAddress}}/weatherforecast/
-Accept: application/json
+POST {{connecto.server_HostAddress}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123"
+}
+
+###
+
+POST {{connecto.server_HostAddress}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "password123",
+  "firstName": "Test",
+  "lastName": "User"
+}
 
 ###

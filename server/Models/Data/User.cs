@@ -31,11 +31,8 @@ public class User
         LastName = lastName;
     }
 
-    public static string HashText(string text)
-    {
-        var salt = BCrypt.Net.BCrypt.GenerateSalt();
-        return BCrypt.Net.BCrypt.HashPassword(text, salt);
-    }
+    public static string HashText(string text) =>
+        BCrypt.Net.BCrypt.HashPassword(text);
 
     public bool CheckPasswordMatch(string text) => BCrypt.Net.BCrypt.Verify(text, PasswordHash);
 }
