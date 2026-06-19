@@ -1,0 +1,20 @@
+{
+  "name": "@connecto/client",
+  "version": "0.1.0",
+  "description": "TypeScript client for Connecto realtime database",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@microsoft/signalr": "^8.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["connecto", "realtime", "database", "signalr"],
+  "license": "MIT"
+}
