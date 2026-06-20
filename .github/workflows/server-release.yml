@@ -71,7 +71,7 @@ jobs:
       - name: Package TypeScript client
         working-directory: clients/typescript
         run: |
-          npm ci
+          npm install
           npm pack
           cp *.tgz ../../release-assets/
 
