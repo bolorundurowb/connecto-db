@@ -65,7 +65,8 @@ jobs:
 
       - name: Package .NET client
         run: |
-          dotnet pack clients/dotnet/Connecto.Client/Connecto.Client.csproj -c Release -o ./release-assets
+          dotnet build clients/dotnet/Connecto.Client/Connecto.Client.csproj -c Release
+          dotnet pack clients/dotnet/Connecto.Client/Connecto.Client.csproj -c Release -o ./release-assets --no-build
 
       - name: Package TypeScript client
         working-directory: clients/typescript
