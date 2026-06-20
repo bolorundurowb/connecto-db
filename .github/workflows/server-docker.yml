@@ -7,7 +7,7 @@ on:
     tags:
       - "server/v*"
     branches:
-      - main
+      - master
 
 jobs:
   build:
