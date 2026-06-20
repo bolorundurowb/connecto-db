@@ -1,0 +1,110 @@
+name: Server Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read server version
+        id: version
+        run: |
+          VERSION=$(grep -oP '<Version>\K[^<]+' server/connecto.server.csproj)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Publish server executable (linux-x64)
+        run: |
+          dotnet publish server/connecto.server.csproj -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true
+          cp server/bin/Release/net10.0/linux-x64/publish/connecto-server ./connecto-server-linux-x64
+
+      - name: Publish server executable (linux-arm64)
+        run: |
+          dotnet publish server/connecto.server.csproj -c Release -r linux-arm64 --self-contained true -p:PublishSingleFile=true
+          cp server/bin/Release/net10.0/linux-arm64/publish/connecto-server ./connecto-server-linux-arm64
+
+      - name: Publish server executable (win-x64)
+        run: |
+          dotnet publish server/connecto.server.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+          cp server/bin/Release/net10.0/win-x64/publish/connecto-server.exe ./connecto-server-win-x64.exe
+
+      - name: Publish server executable (osx-x64)
+        run: |
+          dotnet publish server/connecto.server.csproj -c Release -r osx-x64 --self-contained true -p:PublishSingleFile=true
+          cp server/bin/Release/net10.0/osx-x64/publish/connecto-server ./connecto-server-osx-x64
+
+      - name: Publish server executable (osx-arm64)
+        run: |
+          dotnet publish server/connecto.server.csproj -c Release -r osx-arm64 --self-contained true -p:PublishSingleFile=true
+          cp server/bin/Release/net10.0/osx-arm64/publish/connecto-server ./connecto-server-osx-arm64
+
+      - name: Package .NET client
+        run: |
+          dotnet pack clients/dotnet/Connecto.Client/Connecto.Client.csproj -c Release -o ./release-assets
+
+      - name: Package TypeScript client
+        working-directory: clients/typescript
+        run: |
+          npm ci
+          npm pack
+          cp *.tgz ../../release-assets/
+
+      - name: Package Java client
+        working-directory: clients/java
+        run: |
+          mvn -B package -DskipTests
+          cp target/*.jar ../../release-assets/
+
+      - name: Package Rust client
+        working-directory: clients/rust/connecto-client
+        run: |
+          cargo package --allow-dirty
+          cp target/package/*.crate ../../../../release-assets/
+
+      - name: Package Go client source
+        working-directory: clients/go
+        run: |
+          tar -czf ../../release-assets/go-client-${{ steps.version.outputs.version }}.tar.gz connecto
+
+      - name: Set executable permissions
+        run: |
+          chmod +x ./connecto-server-linux-x64 ./connecto-server-linux-arm64 ./connecto-server-osx-x64 ./connecto-server-osx-arm64
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Server ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            ./connecto-server-linux-x64
+            ./connecto-server-linux-arm64
+            ./connecto-server-win-x64.exe
+            ./connecto-server-osx-x64
+            ./connecto-server-osx-arm64
+            ./release-assets/*

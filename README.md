@@ -1,4 +1,7 @@
-# connecto-db
+# Connecto DB
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Server Docker](https://github.com/bolorundurowb/connecto-db/actions/workflows/server-docker.yml/badge.svg)](https://github.com/bolorundurowb/connecto-db/actions/workflows/server-docker.yml)
 
 A Firebase-inspired realtime database built with **ASP.NET Core**, **SignalR**, **EF Core**, and **SQLite**. Clients subscribe to named collections and receive live push notifications when records are created, updated, or deleted — without polling.
 
@@ -11,17 +14,85 @@ A Firebase-inspired realtime database built with **ASP.NET Core**, **SignalR**, 
 
 ---
 
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+- [Server](#server)
+  - [Prerequisites](#prerequisites)
+  - [Environment Variables](#environment-variables)
+  - [Run from Source](#run-from-source)
+  - [Build a Single Executable](#build-a-single-executable)
+  - [Run with Docker](#run-with-docker)
+- [Client Libraries](#client-libraries)
+  - [TypeScript / JavaScript](#typescript--javascript)
+  - [.NET](#net)
+  - [Rust](#rust)
+  - [Go](#go)
+  - [Java](#java)
+- [API Reference](#api-reference)
+- [Releases](#releases)
+- [Architecture](#architecture)
+- [Contributing](#contributing)
+- [License](#license)
+
+---
+
+## Features
+
+- **Realtime subscriptions** — clients receive live events for creates, updates, and deletes.
+- **JWT authentication** — secure REST login/registration with BCrypt password hashing.
+- **Dynamic collections** — create and drop tables at runtime over SignalR.
+- **Single-file server deployment** — publish the server as one self-contained executable.
+- **Multi-platform clients** — TypeScript, .NET, Rust, Go, and Java libraries.
+- **SQLite backend** — zero-configuration, single-file database.
+
+---
+
+## Quick Start
+
+1. **Start the server**
+
+   ```bash
+   cd server
+   dotnet run
+   ```
+
+   The server will be available at `http://localhost:5043`.
+
+2. **Install a client**
+
+   ```bash
+   npm install @connecto/client
+   ```
+
+3. **Connect and subscribe**
+
+   ```typescript
+   import { ConnectoClient } from "@connecto/client";
+
+   const client = new ConnectoClient("http://localhost:5043");
+   await client.login({ username: "alice", password: "s3cret" });
+   await client.connect();
+
+   client.onEntityCreated((table, record) => {
+     console.log(`New record in ${table}:`, record);
+   });
+   ```
+
+---
+
 ## Server
 
 ### Prerequisites
 
-- .NET 10 SDK (for building from source)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (for building from source)
 
 ### Environment Variables
 
 Create a `.env` file next to the server executable (see `server/.env.example`):
 
-```
+```env
 SECRET=your-jwt-signing-secret-min-32-chars
 ```
 
@@ -39,10 +110,16 @@ The server starts on `http://localhost:5043`. The SQLite database (`connecto-cor
 ```bash
 cd server
 dotnet publish -c Release -r linux-x64 --self-contained
-# or: win-x64, osx-arm64, etc.
+# or: win-x64, osx-arm64, linux-arm64, etc.
 ```
 
-The output is a single file at `bin/Release/net10.0/<rid>/publish/connecto-server`. Copy it anywhere and run:
+The output is a single file at:
+
+```text
+bin/Release/net10.0/<rid>/publish/connecto-server
+```
+
+Copy it anywhere and run:
 
 ```bash
 SECRET=my-secret ./connecto-server
@@ -67,6 +144,14 @@ The `-v` flag persists the SQLite database across container restarts.
 ## Client Libraries
 
 Official clients are available for five languages. Each handles authentication, hub connection, and realtime event subscriptions.
+
+| Language | Package | Registry |
+|---|---|---|
+| TypeScript | `@connecto/client` | npm |
+| .NET | `Connecto.Client` | NuGet |
+| Rust | `connecto-client` | crates.io |
+| Go | `github.com/connecto/go-client/connecto` | Go modules |
+| Java | `com.connecto:connecto-client` | Maven Central / GitHub Packages |
 
 ### TypeScript / JavaScript
 
@@ -329,9 +414,30 @@ Records are arbitrary JSON objects. The server always includes an `"id"` field (
 
 ---
 
-## CI/CD
+## Releases
 
-Each client library has a GitHub Actions workflow that builds on every push and publishes on tag push:
+### Manual Server Release
+
+A maintainer can publish a new server release at any time from the **Actions** tab by running the **Server Release** workflow. It is triggered manually (`workflow_dispatch`) and will:
+
+1. Read the version from `server/connecto.server.csproj`.
+2. Create a GitHub tag and release using that version (e.g. `v0.1.0`).
+3. Publish the server as single-file executables for:
+   - `linux-x64`
+   - `linux-arm64`
+   - `win-x64`
+   - `osx-x64`
+   - `osx-arm64`
+4. Attach client library packages to the same release:
+   - .NET NuGet package
+   - TypeScript npm tarball
+   - Java JAR
+   - Rust crate
+   - Go client source tarball
+
+### Per-Package Releases
+
+Each client library and the server Docker image also has a dedicated workflow that publishes on tag push:
 
 | Client | Tag Pattern | Publishes To | Secret |
 |---|---|---|---|
@@ -352,7 +458,7 @@ git tag typescript/v0.1.0 && git push origin typescript/v0.1.0
 
 ## Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────┐
 │               ASP.NET Core                  │
 │                                             │
@@ -373,6 +479,21 @@ git tag typescript/v0.1.0 && git push origin typescript/v0.1.0
 - **Collections** and **records** are managed entirely through SignalR hubs.
 - The SQLite database is a single file. The `users` table is managed by EF Core; all other tables are created dynamically by clients at runtime.
 - Real-time fanout uses **SignalR Groups** — one group per collection name.
+
+---
+
+## Contributing
+
+Contributions are welcome. To get started:
+
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-feature`).
+3. Make your changes and add tests where appropriate.
+4. Open a pull request.
+
+Please keep changes focused and follow the existing code style.
+
+---
 
 ## License
 
